@@ -5,14 +5,14 @@ use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
 
 lazy_static! {
     static ref IDT: InterruptDescriptorTable = {
-        let mut ldt = InterruptDescriptorTable::new();
-        ldt.breakpoint.set_handler_fn(breakpoint_handler);
+        let mut idt = InterruptDescriptorTable::new();
+        idt.breakpoint.set_handler_fn(breakpoint_handler);
         unsafe {
-            ldt.double_fault
+            idt.double_fault
                 .set_handler_fn(double_fault_handler)
                 .set_stack_index(gdt::DOUBLE_FAULT_IST_INDEX);
         }
-        ldt
+        idt
     };
 }
 pub fn init_idt() {
