@@ -1,5 +1,5 @@
 use x86_64::{
-    structures::paging::{OffsetPageTable, PageTable},
+    structures::paging::{FrameAllocator, OffsetPageTable, PageTable, PhysFrame, Size4KiB},
     PhysAddr, VirtAddr,
 };
 
@@ -18,4 +18,12 @@ unsafe fn active_level_4_table(physical_memory_offset: VirtAddr) -> &'static mut
     let page_table_ptr: *mut PageTable = virt.as_mut_ptr();
 
     &mut *page_table_ptr
+}
+
+pub struct EmptyFrameAllocator;
+
+unsafe impl FrameAllocator<Size4KiB> for EmptyFrameAllocator {
+    fn allocate_frame(&mut self) -> Option<PhysFrame> {
+        None
+    }
 }
