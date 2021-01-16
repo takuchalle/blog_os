@@ -4,10 +4,12 @@
 #![test_runner(blog_os::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
-use blog_os::println;
+extern crate alloc;
+
+use blog_os::task::{simple_executor::SimpleExecutor, Task};
+use blog_os::{allocator, println};
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
-use x86_64::structures::paging::PageTable;
 
 /// This function is called on panic.
 #[cfg(not(test))]
@@ -28,30 +30,33 @@ entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use blog_os::memory;
-    use x86_64::{structures::paging::MapperAllSizes, VirtAddr};
+    use x86_64::VirtAddr;
 
     println!("Hello world{}", "!");
     blog_os::init();
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let mapper = unsafe { memory::init(phys_mem_offset) };
+    let mut mapper = unsafe { memory::init(phys_mem_offset) };
+    let mut frame_allocator =
+        unsafe { memory::BootInfoFrameAllocator::init(&boot_info.memory_map) };
+    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
-    let addresses = [
-        0xb8000,
-        0x201008,
-        0x0100_0020_1a10,
-        0x110,
-        boot_info.physical_memory_offset,
-    ];
+    let mut executor = SimpleExecutor::new();
+    executor.spawn(Task::new(example_task()));
+    executor.run();
 
-    for &address in &addresses {
-        let virt = VirtAddr::new(address);
-        let phys = mapper.translate_addr(virt);
-        println!("{:?} -> {:?}", virt, phys);
-    }
     #[cfg(test)]
     test_main();
 
     println!("It did not crash!");
     blog_os::hlt_loop();
+}
+
+async fn async_number() -> u32 {
+    42
+}
+
+async fn example_task() {
+    let number = async_number().await;
+    println!("async number: {}", number);
 }
