@@ -6,6 +6,7 @@
 
 extern crate alloc;
 
+use blog_os::task::keyboard;
 use blog_os::task::{simple_executor::SimpleExecutor, Task};
 use blog_os::{allocator, println};
 use bootloader::{entry_point, BootInfo};
@@ -43,6 +44,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     let mut executor = SimpleExecutor::new();
     executor.spawn(Task::new(example_task()));
+    executor.spawn(Task::new(keyboard::print_keypresses()));
     executor.run();
 
     #[cfg(test)]
