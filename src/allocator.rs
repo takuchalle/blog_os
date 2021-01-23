@@ -1,14 +1,10 @@
-pub mod bump;
-pub mod linked_list;
-
-use bump::BumpAllocator;
+use linked_list_allocator::LockedHeap;
 use x86_64::{
     structures::paging::{
         mapper::MapToError, FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB,
     },
     VirtAddr,
 };
-use linked_list_allocator::LockedHeap;
 
 pub const HEAP_START: usize = 0x_4444_4444_0000;
 pub const HEAP_SIZE: usize = 0x100 * 1024;
@@ -30,10 +26,6 @@ impl<A> Locked<A> {
     pub fn lock(&self) -> spin::MutexGuard<A> {
         self.inner.lock()
     }
-}
-
-fn align_up(addr: usize, align: usize) -> usize {
-    (addr + align - 1) & !(align - 1)
 }
 
 pub fn init_heap(
